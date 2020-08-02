@@ -97,18 +97,24 @@ def main(args):
     # モデルの読み込み
     model = word2vec.Word2Vec.load(join(current_dirname, 'word2vec', 'word2vec.model'))
     if not args.n_word:
-        print("\"{}\" is similar to:".format(args.p_word))
-        results = model.wv.most_similar(positive=[args.p_word], topn=5)
+        for p in args.p_word:
+            print("+ \"{}\" ".format(p), end="")
+        print("is similar to:")
+        results = model.wv.most_similar(positive=args.p_word, topn=5)
     else:
-        print("\"{}\" - \"{}\" is similar to:".format(args.p_word, args.n_word))
-        results = model.wv.most_similar(positive=[args.p_word], negative=[args.n_word], topn=5)
+        for p in args.p_word:
+            print("+ \"{}\" ".format(p), end="")
+        for n in args.n_word:
+            print("- \"{}\" ".format(n), end="")
+        print("is similar to:")
+        results = model.wv.most_similar(positive=args.p_word, negative=args.n_word, topn=5)
     for result in results:
         print(result[0], result[1])
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--p_word', type=str, default='ダイエット')
-    parser.add_argument('--n_word', type=str)
+    parser.add_argument('--p_word', nargs='+', default=['ダイエット'])
+    parser.add_argument('--n_word', nargs='+')
     args = parser.parse_args()
     main(args)
