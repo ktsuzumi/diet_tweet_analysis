@@ -15,14 +15,15 @@ from wordcloud import WordCloud
 import itertools
 from os.path import expanduser
 
+# mplバックグラウンド指定、カレントディレクトリの取得
 matplotlib.use('Agg')
 current_dirname = dirname(abspath(__file__))
 
+# 言語ごとのストップワードリスト作成
 slothlib_path = join(current_dirname, 'jp_stopword.txt')
 with open(slothlib_path) as f:
     lines = f.readlines()
     slothlib_stopwords = [word.rstrip('\n') for word in lines]
-
 jp_stopwords = [ss for ss in slothlib_stopwords if not ss == u'']
 en_stopwords = list(set(nltk_stopwords.words("english")))
 
@@ -68,6 +69,7 @@ def select(dbc, table):
     rs = cursor.execute(sql).fetchall()
     tweet_list = []
     if rs:
+        # 言語ごとに単語分割しストップワード除去
         if table == 'en_diet':
             for tweet in rs:
                 tokens = nltk.word_tokenize(tweet[0])
@@ -76,6 +78,7 @@ def select(dbc, table):
         else:
             for tweet in rs:
                 tokens = tokenizer(tweet[0])
+                # 質問箱とツイート中に食事制限orダイエットがないツイートの削除
                 if not set(tokens).isdisjoint({"食事制限", "ダイエット"}) and set(tokens).isdisjoint({"質問箱",}):
                     tweet_list.append(del_jp_stopwords(tokens))
     return tweet_list
@@ -86,21 +89,22 @@ def word2pair(tweet_list, min_count=5):
     pair_all = []
 
     for tweet in tweet_list:
-        # combinationsを使うと順番が違うだけのペアは重複しない
         pairs = list(combinations(set(tweet), 2))
         for i, pair in enumerate(pairs):
             pairs[i] = tuple(sorted(pair))
         pair_all += pairs
     pair_count = Counter(pair_all)
+
     for key, count in dropwhile(lambda key_count: key_count[1] >= min_count, pair_count.most_common()):
         del pair_count[key]
+
     return pair_count
 
 
 def pair2jaccard(pair_count, tweet_list, edge_th=0.4):
     # jaccard係数を計算
 
-    # 単語ごとの出現章数
+    # 単語ごとの出現ツイート数
     word_count = Counter()
     for tweet in tweet_list:
         word_count += Counter(set(tweet))
@@ -181,6 +185,7 @@ def main(args):
     dbc = db_connect(join(current_dirname, 'tweet.db'))
     tweet_list = select(dbc, args.table)
     print("Number of tweet = {}".format(len(tweet_list)))
+
     # WordCloud
     word_list = list(itertools.chain.from_iterable(tweet_list))
     text = ' '.join(word_list)
@@ -188,6 +193,8 @@ def main(args):
     font_path = join(home, "Library", "Fonts","RictyDiminished-Bold.ttf")
     wc = WordCloud(background_color="white", collocations=False, font_path=font_path, width=800, height=500).generate(text)
     wc.to_file(join(current_dirname, 'image', '{}_wc.png'.format(args.table)))
+
+
     # 共起ネットワーク
     jaccard_dict, word_count = pair2jaccard(word2pair(tweet_list, min_count=10), tweet_list, edge_th=0.05)
     build_network(jaccard_dict, word_count, args.table)

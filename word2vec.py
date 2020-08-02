@@ -45,7 +45,6 @@ def tokenizer(text):
     tagger.parse('')
     # MeCabの解析
     node = tagger.parseToNode(text)
-    # 解析結果から名詞、動詞、形容詞のみにする
     word_list = []
     while node:
         features = node.feature.split(",")
@@ -94,6 +93,7 @@ def main(args):
     #                           hs=1,
     #                           negative=5)
     # model.save(join(current_dirname, 'word2vec', 'word2vec.model'))
+
     # モデルの読み込み
     model = word2vec.Word2Vec.load(join(current_dirname, 'word2vec', 'word2vec.model'))
     if not args.n_word:
