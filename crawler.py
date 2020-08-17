@@ -37,7 +37,7 @@ def do_preprocess(text):
     text = re.sub(r'https?://[\w/:%#\$&\?\(\)~\.=\+\-]+', '', text)
     text = re.sub(r'\d+', '', text)
     text = re.sub(r'[０-９]+', '', text)
-    text = re.sub(r'(?<![0-9a-zA-Z\'\"#@=:;])@([0-9a-zA-Z_]{1,15})', "", text)
+    text = re.sub(r'[︰-＠]', "", text)
     text = re.sub(r'…', '', text)
     text = re.sub(r'\s+', ' ', text)
     text = re.sub('\n', ' ', text)
